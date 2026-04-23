@@ -4,14 +4,13 @@ public class Task {
     
     // attributes
     
-    private String id;
+    private String id = java.util.UUID.randomUUID().toString();
     private String title;
     private boolean completed;
 
     // constructor
 
-    public Task(String id, String title) {
-        this.id = id;
+    public Task(String title) {
         this.title = title;
     }
 
