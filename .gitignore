@@ -1,5 +1,7 @@
 target/
 *.class
 .env
-.DB_Store
+.DS_Store
 *.log
+.idea/
+.vscode/
