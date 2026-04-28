@@ -1,20 +1,27 @@
 package com.mab.tasktracker.domain;
 
+import java.util.UUID;
+
 public class Task {
-    
-    // attributes
-    
-    private String id = java.util.UUID.randomUUID().toString();
+    private final String id = UUID.randomUUID().toString();
     private String title;
     private boolean completed;
 
-    // constructor
-
-    public Task(String title) {
-        this.title = title;
+    private static String validateTitle(String title) {
+        if (title == null) {
+            throw new IllegalArgumentException("Title cannot be null");
+        }
+        title = title.trim();
+        if (title.isEmpty()) {
+            throw new IllegalArgumentException("Title cannot be empty");
+        }
+        return title;
     }
 
-    // getters
+    public Task(String title) {
+        this.title = validateTitle(title);
+        this.completed = false;
+    }
 
     public String getId() {
         return id;
@@ -28,14 +35,16 @@ public class Task {
         return completed;
     }
     
-    // setters
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void rename(String title) {
+        this.title = validateTitle(title);
     }
 
     public void markCompleted() {
         this.completed = true;
     }
 
+    public void markIncomplete() {
+        this.completed = false;
+    }
 }
