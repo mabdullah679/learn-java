@@ -6,7 +6,6 @@ public class Task {
     private final String id = UUID.randomUUID().toString();
     private String title;
     private boolean completed;
-
     private static String validateTitle(String title) {
         if (title == null) {
             throw new IllegalArgumentException("Title cannot be null");
@@ -17,33 +16,25 @@ public class Task {
         }
         return title;
     }
-
     public Task(String title) {
         this.title = validateTitle(title);
         this.completed = false;
     }
-
     public String getId() {
         return id;
     }
-    
     public String getTitle() {
         return title;
     }
-
     public boolean isCompleted() {
         return completed;
     }
-    
-
     public void rename(String title) {
         this.title = validateTitle(title);
     }
-
     public void markCompleted() {
         this.completed = true;
     }
-
     public void markIncomplete() {
         this.completed = false;
     }
