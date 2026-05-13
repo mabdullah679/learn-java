@@ -1,29 +1,37 @@
 package com.mab.tasktracker.repository;
+
 import com.mab.tasktracker.domain.Task;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class TaskRepository {
 
-
-    private Map<String, Task> tasks = new HashMap<>();
+    private final Map<String, Task> tasks = new HashMap<>();
 
     public Task saveTask(Task task) {
         tasks.put(task.getId(), task);
-        return task;}
-
+        return task;
+    }
 
     public Optional<Task> findById(String id) {
+        final Task task = tasks.get(id);
+        return Optional.ofNullable(task);
+    }
 
-        if (tasks.containsKey(id)) {
+    public List<Task> findAll() {
+        return new ArrayList<>(tasks.values());
+    }
 
-            final Task task = tasks.get(id);
-            return Optional.of(task);
-
-        }
-        else {
-            return Optional.empty();
+    public boolean deleteById(String id) {
+        final Task deletedTask = tasks.remove(id);
+        if (deletedTask == null) {
+            return false;
+        } else {
+            return true;
         }
     }
 }

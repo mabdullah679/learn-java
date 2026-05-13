@@ -1,0 +1,317 @@
+Task Tracker App TODO
+=====================
+
+Current goal:
+Build a full-stack Java task tracker by hand, slowly, one layer at a time.
+
+
+1. Finish TaskService tests
+---------------------------
+
+1.1 Add missing deleteTask test
+File:
+src/test/java/com/mab/tasktracker/service/TaskServiceTest.java
+
+Test case:
+- deleteTaskReturnsFalseForMissingTask
+  - create service
+  - call deleteTask with missing ID
+  - assert result is false
+
+
+2. Clean up existing test files
+-------------------------------
+
+2.1 TaskTest cleanup
+File:
+src/test/java/com/mab/tasktracker/domain/TaskTest.java
+
+Behavior:
+- No behavior changes needed. Domain coverage is complete for current Task.
+
+Cleanup:
+- Remove extra whitespace on blank lines.
+- Keep imports grouped clearly:
+  - normal imports
+  - blank line
+  - static assertion imports
+- Keep test names descriptive.
+
+
+2.2 TaskRepositoryTest cleanup
+File:
+src/test/java/com/mab/tasktracker/repository/TaskRepositoryTest.java
+
+Behavior:
+- No behavior changes needed. Repository coverage is complete for current repository.
+
+Cleanup:
+- Remove unused imports.
+- Keep import order consistent.
+- Keep variable names camelCase.
+
+
+2.3 TaskServiceTest cleanup
+File:
+src/test/java/com/mab/tasktracker/service/TaskServiceTest.java
+
+Behavior:
+- Continue adding tests as service methods are added.
+
+Cleanup:
+- Keep tests independent.
+- Each test should create its own TaskService.
+- Do not nest test methods inside other test methods.
+- Always assert Optional is present before calling get.
+
+
+3. Add a runnable entry point
+-----------------------------
+
+File:
+src/main/java/com/mab/tasktracker/TaskTrackerEntryPoint.java
+
+Behavior:
+- Give the app a main method.
+- For the first version, it can create a TaskService and perform a tiny manual demo.
+- Later, this entry point will start the HTTP server.
+
+Imports:
+- TaskService
+- Task if the demo directly references returned tasks
+
+Tests:
+- Not required yet.
+- Entry points are often tested indirectly through service/API tests.
+
+
+4. Add HTTP server by hand
+--------------------------
+
+Goal:
+Expose the task tracker as a backend API without Spring Boot.
+
+Likely file:
+src/main/java/com/mab/tasktracker/server/TaskHttpServer.java
+
+Possible Java API:
+- com.sun.net.httpserver.HttpServer
+
+Behavior:
+- Start server on a local port.
+- Route API requests to TaskService.
+
+Initial routes:
+- GET /api/tasks
+  - return all tasks
+
+- POST /api/tasks
+  - create task from request body
+  - return created task
+
+- GET /api/tasks/{id}
+  - return task if found
+  - return 404 if missing
+
+- PATCH /api/tasks/{id}/title
+  - rename task
+  - return updated task if found
+  - return 404 if missing
+
+- PATCH /api/tasks/{id}/complete
+  - complete task
+  - return updated task if found
+  - return 404 if missing
+
+- PATCH /api/tasks/{id}/reopen
+  - mark task incomplete
+  - return updated task if found
+  - return 404 if missing
+
+- DELETE /api/tasks/{id}
+  - delete task
+  - return success if deleted
+  - return 404 if missing
+
+Imports:
+- HttpServer
+- HttpExchange
+- InetSocketAddress
+- IOException
+- StandardCharsets
+- TaskService
+- Task
+- List
+- Optional
+
+Tests:
+- Add later after service is complete.
+- Could begin with manual curl tests before automated HTTP tests.
+
+
+5. Add JSON handling
+--------------------
+
+Goal:
+Convert Task objects to JSON and parse request bodies.
+
+Simple first version:
+- Manually serialize Task to JSON.
+- Manually parse a very small title field from request body.
+
+Better later version:
+- Add Jackson dependency.
+
+Behavior:
+- Task JSON should include:
+  - id
+  - title
+  - completed
+
+Possible files:
+- src/main/java/com/mab/tasktracker/http/TaskJson.java
+
+Tests:
+- taskToJsonIncludesIdTitleAndCompleted
+- taskListToJsonIncludesAllTasks
+- parseCreateTaskRequestReadsTitle
+
+
+6. Add frontend files
+---------------------
+
+Goal:
+Create a simple browser UI for the task tracker.
+
+Possible files:
+- src/main/resources/static/index.html
+- src/main/resources/static/styles.css
+- src/main/resources/static/app.js
+
+Behavior:
+- Show list of tasks.
+- Create a task.
+- Rename a task.
+- Complete/reopen a task.
+- Delete a task.
+- Show basic empty state.
+- Show simple error messages.
+
+Imports:
+- Not applicable for HTML/CSS/JS.
+
+Tests:
+- Manual browser testing first.
+- Automated browser tests can come later.
+
+
+7. Serve static frontend from Java
+----------------------------------
+
+Goal:
+Make the Java HTTP server serve index.html, CSS, and JS.
+
+Behavior:
+- GET / returns index.html.
+- GET /styles.css returns stylesheet.
+- GET /app.js returns frontend JavaScript.
+- Unknown static files return 404.
+
+Tests:
+- Manual browser test first.
+- Later, add HTTP tests for static file responses.
+
+
+8. Improve persistence
+----------------------
+
+Current state:
+- Repository stores tasks in memory.
+- All data disappears when app stops.
+
+Next persistence step:
+- Save tasks to a local JSON file.
+
+Possible files:
+- src/main/java/com/mab/tasktracker/repository/FileBackedTaskRepository.java
+- src/main/java/com/mab/tasktracker/repository/TaskRepository.java may become an interface later
+
+Behavior:
+- Load tasks from file on startup.
+- Save tasks after create/rename/complete/reopen/delete.
+
+Tests:
+- saving task writes to file
+- repository loads existing file
+- delete removes task from file
+
+
+9. Package and run the app
+--------------------------
+
+Goal:
+Build a runnable jar.
+
+Files:
+- pom.xml
+- src/main/java/com/mab/tasktracker/TaskTrackerEntryPoint.java
+
+Behavior:
+- mvn package creates a jar.
+- java -jar target/... starts the app.
+
+Pom needs:
+- Main-Class configuration.
+
+Tests:
+- mvn test
+- mvn package
+- manual run command
+
+
+10. Dockerize
+-------------
+
+File:
+Dockerfile
+
+Behavior:
+- Build the Maven project.
+- Run the app jar.
+- Expose the HTTP server port.
+
+Tests:
+- docker build succeeds
+- docker run starts app
+- curl API route works
+
+
+11. Documentation
+-----------------
+
+File:
+README.md
+
+Behavior:
+- Explain what the app does.
+- Explain how to run tests.
+- Explain how to run the app.
+- Explain current limitations.
+
+Commands to document:
+- mvn test
+- mvn compile
+- later: mvn package
+- later: java -jar ...
+
+
+Current test command
+--------------------
+
+Run:
+mvn test
+
+Expected current status after service tests are fixed:
+- Domain tests pass.
+- Repository tests pass.
+- Service tests pass for implemented service methods.
