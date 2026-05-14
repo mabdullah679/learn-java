@@ -27,7 +27,7 @@ public class TaskRepositoryTest {
     public void findByIdReturnsEmptyForMissingId() {
         TaskRepository repository = new TaskRepository();
         Optional<Task> foundTask = repository.findById("non-existent-id");
-        assertFalse(foundTask.isPresent());
+        assertTrue(foundTask.isEmpty());
     }
 
     @Test

@@ -7,13 +7,12 @@ import java.net.InetSocketAddress;
 import java.io.IOException;
 
 public class TaskHttpServer {
-
-    private final TaskService taskService;
     private final HttpServer server;
+    private final TaskHandler taskHandler;
     public TaskHttpServer(TaskService taskService, int port) throws IOException {
-        this.taskService = taskService;
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
-        this.server.createContext("/tasks", new TaskHandler(taskService));
+        this.taskHandler = new TaskHandler(taskService);
+        server.createContext("/tasks", taskHandler);
     }
 
     public void start() {

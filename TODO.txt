@@ -1,317 +1,479 @@
 Task Tracker App TODO
 =====================
 
-Current goal:
-Build a full-stack Java task tracker by hand, slowly, one layer at a time.
+Current status:
+- Domain model is implemented and tested.
+- Repository is implemented and tested.
+- Service layer is implemented and tested.
+- Entry point starts the HTTP server.
+- /tasks route is wired to TaskHandler.
+- Current HTTP output is still temporary/plain text.
+
+Current verification command:
+mvn test
 
 
-1. Finish TaskService tests
----------------------------
+1. Fix TaskHttpServer Wiring
+----------------------------
 
-1.1 Add missing deleteTask test
-File:
-src/test/java/com/mab/tasktracker/service/TaskServiceTest.java
-
-Test case:
-- deleteTaskReturnsFalseForMissingTask
-  - create service
-  - call deleteTask with missing ID
-  - assert result is false
-
-
-2. Clean up existing test files
--------------------------------
-
-2.1 TaskTest cleanup
-File:
-src/test/java/com/mab/tasktracker/domain/TaskTest.java
-
-Behavior:
-- No behavior changes needed. Domain coverage is complete for current Task.
-
-Cleanup:
-- Remove extra whitespace on blank lines.
-- Keep imports grouped clearly:
-  - normal imports
-  - blank line
-  - static assertion imports
-- Keep test names descriptive.
-
-
-2.2 TaskRepositoryTest cleanup
-File:
-src/test/java/com/mab/tasktracker/repository/TaskRepositoryTest.java
-
-Behavior:
-- No behavior changes needed. Repository coverage is complete for current repository.
-
-Cleanup:
-- Remove unused imports.
-- Keep import order consistent.
-- Keep variable names camelCase.
-
-
-2.3 TaskServiceTest cleanup
-File:
-src/test/java/com/mab/tasktracker/service/TaskServiceTest.java
-
-Behavior:
-- Continue adding tests as service methods are added.
-
-Cleanup:
-- Keep tests independent.
-- Each test should create its own TaskService.
-- Do not nest test methods inside other test methods.
-- Always assert Optional is present before calling get.
-
-
-3. Add a runnable entry point
------------------------------
+Urgency:
+Immediate.
 
 File:
-src/main/java/com/mab/tasktracker/TaskTrackerEntryPoint.java
-
-Behavior:
-- Give the app a main method.
-- For the first version, it can create a TaskService and perform a tiny manual demo.
-- Later, this entry point will start the HTTP server.
-
-Imports:
-- TaskService
-- Task if the demo directly references returned tasks
-
-Tests:
-- Not required yet.
-- Entry points are often tested indirectly through service/API tests.
-
-
-4. Add HTTP server by hand
---------------------------
-
-Goal:
-Expose the task tracker as a backend API without Spring Boot.
-
-Likely file:
 src/main/java/com/mab/tasktracker/server/TaskHttpServer.java
 
-Possible Java API:
-- com.sun.net.httpserver.HttpServer
-
-Behavior:
-- Start server on a local port.
-- Route API requests to TaskService.
-
-Initial routes:
-- GET /api/tasks
-  - return all tasks
-
-- POST /api/tasks
-  - create task from request body
-  - return created task
-
-- GET /api/tasks/{id}
-  - return task if found
-  - return 404 if missing
-
-- PATCH /api/tasks/{id}/title
-  - rename task
-  - return updated task if found
-  - return 404 if missing
-
-- PATCH /api/tasks/{id}/complete
-  - complete task
-  - return updated task if found
-  - return 404 if missing
-
-- PATCH /api/tasks/{id}/reopen
-  - mark task incomplete
-  - return updated task if found
-  - return 404 if missing
-
-- DELETE /api/tasks/{id}
-  - delete task
-  - return success if deleted
-  - return 404 if missing
+Package:
+com.mab.tasktracker.server
 
 Imports:
-- HttpServer
-- HttpExchange
-- InetSocketAddress
-- IOException
-- StandardCharsets
-- TaskService
-- Task
-- List
-- Optional
+- com.mab.tasktracker.service.TaskService
+- com.sun.net.httpserver.HttpServer
+- java.net.InetSocketAddress
+- java.io.IOException
 
-Tests:
-- Add later after service is complete.
-- Could begin with manual curl tests before automated HTTP tests.
-
-
-5. Add JSON handling
---------------------
-
-Goal:
-Convert Task objects to JSON and parse request bodies.
-
-Simple first version:
-- Manually serialize Task to JSON.
-- Manually parse a very small title field from request body.
-
-Better later version:
-- Add Jackson dependency.
+Do not import:
+- TaskHandler, because it is in the same package.
+- HttpHandler, unless directly referenced.
 
 Behavior:
-- Task JSON should include:
-  - id
-  - title
-  - completed
+- Own the Java HttpServer instance.
+- Accept TaskService and port in the constructor.
+- Create one TaskHandler using the TaskService.
+- Attach that TaskHandler to /tasks.
+- Start the server with start().
+- Stop the server with stop().
 
-Possible files:
-- src/main/java/com/mab/tasktracker/http/TaskJson.java
+Implementation notes:
+- server should be private final.
+- If taskHandler is a field, initialize it before using it.
+- Do not create two TaskHandler instances.
+- Do not expose a generic createContext wrapper for now.
 
-Tests:
-- taskToJsonIncludesIdTitleAndCompleted
-- taskListToJsonIncludesAllTasks
-- parseCreateTaskRequestReadsTitle
+Validation:
+- Run mvn clean test.
+- Run the app with:
+  java -cp target/classes com.mab.tasktracker.TaskTrackerEntryPoint
+- In another terminal:
+  curl http://localhost:8080/tasks
 
 
-6. Add frontend files
+2. Improve TaskHandler GET /tasks Response
+------------------------------------------
+
+Urgency:
+Next.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Package:
+com.mab.tasktracker.server
+
+Imports:
+- com.mab.tasktracker.service.TaskService
+- com.sun.net.httpserver.HttpHandler
+- com.sun.net.httpserver.HttpExchange
+- java.io.IOException
+- java.nio.charset.StandardCharsets
+
+Behavior:
+- Handle GET /tasks.
+- Return HTTP 200.
+- Return a readable response body.
+- Return HTTP 405 for unsupported methods.
+- Return HTTP 500 for unexpected errors.
+
+Current limitation:
+- taskService.listAllTasks().toString() is temporary.
+- It may print Java object references unless Task has a useful toString.
+
+Implementation notes:
+- Convert response text to bytes using UTF-8.
+- Send Content-Length based on the UTF-8 byte array length.
+- Close the response body after writing.
+
+Validation:
+- Run mvn test.
+- Start server.
+- Run:
+  curl -i http://localhost:8080/tasks
+- Expected:
+  HTTP 200 response.
+
+
+3. Add Task Text Formatting
+---------------------------
+
+Urgency:
+After basic GET works.
+
+Option A file:
+src/main/java/com/mab/tasktracker/domain/Task.java
+
+Behavior:
+- Add a simple toString for temporary human-readable output.
+- Include id, title, and completed status.
+
+Option B file:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Behavior:
+- Format tasks inside TaskHandler instead of adding toString.
+
+Recommended for now:
+- Add temporary formatting in TaskHandler.
+- Save JSON for later.
+
+Imports:
+- java.util.List if formatting a list locally.
+- com.mab.tasktracker.domain.Task if directly iterating tasks.
+
+Validation:
+- Create a task manually in TaskTrackerEntryPoint if needed.
+- curl /tasks should show readable task data.
+
+
+4. Add POST /tasks
+------------------
+
+Urgency:
+After GET response is readable.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Imports:
+- java.io.InputStream
+- java.nio.charset.StandardCharsets
+- com.mab.tasktracker.domain.Task
+
+Behavior:
+- Handle POST /tasks.
+- Read request body as a title string.
+- Call taskService.createTask(title).
+- Return created task.
+- Return HTTP 201 on success.
+- Return HTTP 400 if title is invalid.
+
+Implementation notes:
+- Keep request parsing simple at first.
+- Body can be plain text before JSON exists.
+
+Manual test:
+curl -i -X POST http://localhost:8080/tasks --data "Buy milk"
+
+Expected:
+- HTTP 201.
+- Response includes created task title.
+
+
+5. Add Path Parsing For /tasks/{id}
+-----------------------------------
+
+Urgency:
+After POST works.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Imports:
+- java.net.URI if useful.
+- java.util.Optional
+- com.mab.tasktracker.domain.Task
+
+Behavior:
+- Read exchange.getRequestURI().getPath().
+- Support /tasks for collection routes.
+- Support /tasks/{id} for single-task routes.
+- Return HTTP 404 when ID is missing from service.
+
+Important:
+- Java HttpServer does not understand /tasks/{id} patterns automatically.
+- You must parse the path manually.
+
+Manual tests:
+curl -i http://localhost:8080/tasks/some-id
+
+
+6. Add GET /tasks/{id}
+----------------------
+
+Urgency:
+After path parsing.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Behavior:
+- Find a task by ID.
+- Return HTTP 200 with task when found.
+- Return HTTP 404 when missing.
+
+Service method:
+- taskService.findById(id)
+
+
+7. Add PATCH Routes
+-------------------
+
+Urgency:
+After GET by ID works.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Routes:
+- PATCH /tasks/{id}/title
+- PATCH /tasks/{id}/complete
+- PATCH /tasks/{id}/reopen
+
+Behavior:
+- Rename route reads new title from request body.
+- Complete route calls taskService.completeTask(id).
+- Reopen route calls taskService.reopenTask(id).
+- Return HTTP 200 when updated.
+- Return HTTP 404 when task is missing.
+- Return HTTP 400 for invalid rename title.
+
+Manual tests:
+curl -i -X PATCH http://localhost:8080/tasks/{id}/complete
+curl -i -X PATCH http://localhost:8080/tasks/{id}/reopen
+curl -i -X PATCH http://localhost:8080/tasks/{id}/title --data "New title"
+
+
+8. Add DELETE /tasks/{id}
+-------------------------
+
+Urgency:
+After PATCH routes.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Behavior:
+- Delete task by ID.
+- Return HTTP 204 or 200 when deleted.
+- Return HTTP 404 when missing.
+
+Service method:
+- taskService.deleteTask(id)
+
+Manual test:
+curl -i -X DELETE http://localhost:8080/tasks/{id}
+
+
+9. Extract HTTP Response Helpers
+--------------------------------
+
+Urgency:
+After routes start repeating response logic.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Behavior:
+- Avoid repeating response header/body writing.
+- Have one helper for sending text responses.
+- Always use UTF-8.
+
+Imports:
+- java.nio.charset.StandardCharsets
+
+Validation:
+- Existing routes still return same status codes and bodies.
+
+
+10. Add JSON Handling
 ---------------------
 
-Goal:
-Create a simple browser UI for the task tracker.
+Urgency:
+After plain-text HTTP routes work.
 
-Possible files:
+Possible file:
+src/main/java/com/mab/tasktracker/server/TaskJson.java
+
+Package:
+com.mab.tasktracker.server
+
+Initial approach:
+- Manual JSON.
+
+Behavior:
+- Convert one Task to JSON.
+- Convert List<Task> to JSON array.
+- Parse title from simple JSON body if desired.
+
+Imports:
+- com.mab.tasktracker.domain.Task
+- java.util.List
+
+Task JSON fields:
+- id
+- title
+- completed
+
+Tests:
+Possible file:
+src/test/java/com/mab/tasktracker/server/TaskJsonTest.java
+
+Test cases:
+- taskToJsonIncludesIdTitleAndCompleted
+- taskListToJsonIncludesAllTasks
+
+
+11. Add HTTP Handler Tests
+--------------------------
+
+Urgency:
+After HTTP behavior stabilizes.
+
+Possible file:
+src/test/java/com/mab/tasktracker/server/TaskHandlerTest.java
+
+Behavior:
+- Verify GET /tasks.
+- Verify POST /tasks.
+- Verify missing route responses.
+
+Note:
+- Testing com.sun.net.httpserver handlers can be more involved.
+- Manual curl testing is acceptable before automated HTTP tests.
+
+
+12. Make The Jar Runnable
+-------------------------
+
+Urgency:
+After basic HTTP API works.
+
+File:
+pom.xml
+
+Behavior:
+- Configure a Main-Class for TaskTrackerEntryPoint.
+- Allow:
+  java -jar target/task-list-app-1.0-SNAPSHOT.jar
+
+Tools:
+- Maven jar plugin or shade plugin.
+
+Validation:
+- mvn clean package
+- java -jar target/task-list-app-1.0-SNAPSHOT.jar
+- curl http://localhost:8080/tasks
+
+
+13. Add Frontend Files
+----------------------
+
+Urgency:
+After JSON API works.
+
+Files:
 - src/main/resources/static/index.html
 - src/main/resources/static/styles.css
 - src/main/resources/static/app.js
 
 Behavior:
-- Show list of tasks.
-- Create a task.
-- Rename a task.
-- Complete/reopen a task.
-- Delete a task.
-- Show basic empty state.
-- Show simple error messages.
+- Show tasks.
+- Create tasks.
+- Rename tasks.
+- Complete/reopen tasks.
+- Delete tasks.
+- Show empty state.
+- Show simple errors.
 
 Imports:
 - Not applicable for HTML/CSS/JS.
 
-Tests:
-- Manual browser testing first.
-- Automated browser tests can come later.
 
+14. Serve Static Frontend From Java
+-----------------------------------
 
-7. Serve static frontend from Java
-----------------------------------
+Urgency:
+After frontend files exist.
 
-Goal:
-Make the Java HTTP server serve index.html, CSS, and JS.
+Files:
+- src/main/java/com/mab/tasktracker/server/TaskHttpServer.java
+- possibly a new StaticFileHandler
 
 Behavior:
 - GET / returns index.html.
-- GET /styles.css returns stylesheet.
-- GET /app.js returns frontend JavaScript.
-- Unknown static files return 404.
+- GET /styles.css returns CSS.
+- GET /app.js returns JavaScript.
+- Unknown static paths return 404.
 
-Tests:
-- Manual browser test first.
-- Later, add HTTP tests for static file responses.
+Imports:
+- java.nio.file.Files
+- java.nio.file.Path
+- java.io.IOException
 
 
-8. Improve persistence
-----------------------
+15. Add Persistence
+-------------------
+
+Urgency:
+After full in-memory app works.
 
 Current state:
 - Repository stores tasks in memory.
-- All data disappears when app stops.
+- Data disappears when app stops.
 
-Next persistence step:
-- Save tasks to a local JSON file.
+Possible next design:
+- File-backed repository.
 
 Possible files:
 - src/main/java/com/mab/tasktracker/repository/FileBackedTaskRepository.java
-- src/main/java/com/mab/tasktracker/repository/TaskRepository.java may become an interface later
+- TaskRepository may later become an interface.
 
 Behavior:
-- Load tasks from file on startup.
-- Save tasks after create/rename/complete/reopen/delete.
+- Load tasks from file at startup.
+- Save after create/rename/complete/reopen/delete.
 
 Tests:
-- saving task writes to file
-- repository loads existing file
-- delete removes task from file
+- saving task writes to file.
+- repository loads existing file.
+- delete removes task from file.
 
 
-9. Package and run the app
---------------------------
-
-Goal:
-Build a runnable jar.
-
-Files:
-- pom.xml
-- src/main/java/com/mab/tasktracker/TaskTrackerEntryPoint.java
-
-Behavior:
-- mvn package creates a jar.
-- java -jar target/... starts the app.
-
-Pom needs:
-- Main-Class configuration.
-
-Tests:
-- mvn test
-- mvn package
-- manual run command
-
-
-10. Dockerize
+16. Dockerize
 -------------
+
+Urgency:
+After runnable jar works.
 
 File:
 Dockerfile
 
 Behavior:
-- Build the Maven project.
-- Run the app jar.
-- Expose the HTTP server port.
+- Build project.
+- Run app jar.
+- Expose server port.
 
-Tests:
-- docker build succeeds
-- docker run starts app
-- curl API route works
+Validation:
+- docker build succeeds.
+- docker run starts app.
+- curl /tasks works.
 
 
-11. Documentation
+17. Update README
 -----------------
+
+Urgency:
+Continuously, but especially after HTTP API works.
 
 File:
 README.md
 
 Behavior:
-- Explain what the app does.
+- Explain app purpose.
 - Explain how to run tests.
-- Explain how to run the app.
-- Explain current limitations.
+- Explain how to run server.
+- Document curl examples.
+- Document current limitations.
 
-Commands to document:
+Commands:
 - mvn test
-- mvn compile
-- later: mvn package
-- later: java -jar ...
-
-
-Current test command
---------------------
-
-Run:
-mvn test
-
-Expected current status after service tests are fixed:
-- Domain tests pass.
-- Repository tests pass.
-- Service tests pass for implemented service methods.
+- mvn clean package
+- java -cp target/classes com.mab.tasktracker.TaskTrackerEntryPoint
+- later: java -jar target/task-list-app-1.0-SNAPSHOT.jar

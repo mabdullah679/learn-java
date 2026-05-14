@@ -56,7 +56,7 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void completeTaskMarkExistingTaskAsCompleted() {
+    public void completeTaskMarksExistingTaskAsCompleted() {
         TaskService service = new TaskService();
         Task task = service.createTask("Task");
         Optional<Task> completedTask = service.completeTask(task.getId());
@@ -78,7 +78,7 @@ public class TaskServiceTest {
         service.completeTask(task.getId());
         Optional<Task> reopenedTask = service.reopenTask(task.getId());
         assertTrue(reopenedTask.isPresent());
-        assertFalse(reopenedTask.get().isCompleted());       
+        assertFalse(reopenedTask.get().isCompleted());
     }
 
     @Test
