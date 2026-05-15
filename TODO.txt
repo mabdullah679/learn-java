@@ -1,146 +1,78 @@
 Task Tracker App TODO
 =====================
 
-Current status:
-- Domain model is implemented and tested.
-- Repository is implemented and tested.
-- Service layer is implemented and tested.
+Current completed milestone:
+v1.0.0
+
+Completed:
+- Domain model implemented and tested.
+- Repository implemented and tested.
+- Service layer implemented and tested.
 - Entry point starts the HTTP server.
 - /tasks route is wired to TaskHandler.
-- Current HTTP output is still temporary/plain text.
+- GET /tasks works with readable plain-text output.
+- Wrong path returns 404.
+- Wrong method on /tasks returns 405.
+- Maven builds a runnable jar.
+- Dockerfile runs the jar in a container.
+- Docker deployment was tested.
+- Postman testing was completed for the current API.
 
-Current verification command:
-mvn test
-
-
-1. Fix TaskHttpServer Wiring
-----------------------------
-
-Urgency:
-Immediate.
-
-File:
-src/main/java/com/mab/tasktracker/server/TaskHttpServer.java
-
-Package:
-com.mab.tasktracker.server
-
-Imports:
-- com.mab.tasktracker.service.TaskService
-- com.sun.net.httpserver.HttpServer
-- java.net.InetSocketAddress
-- java.io.IOException
-
-Do not import:
-- TaskHandler, because it is in the same package.
-- HttpHandler, unless directly referenced.
-
-Behavior:
-- Own the Java HttpServer instance.
-- Accept TaskService and port in the constructor.
-- Create one TaskHandler using the TaskService.
-- Attach that TaskHandler to /tasks.
-- Start the server with start().
-- Stop the server with stop().
-
-Implementation notes:
-- server should be private final.
-- If taskHandler is a field, initialize it before using it.
-- Do not create two TaskHandler instances.
-- Do not expose a generic createContext wrapper for now.
-
-Validation:
-- Run mvn clean test.
-- Run the app with:
-  java -cp target/classes com.mab.tasktracker.TaskTrackerEntryPoint
-- In another terminal:
-  curl http://localhost:8080/tasks
+Current verification commands:
+- mvn test
+- mvn clean package
+- java -jar target/task-list-app-1.0-SNAPSHOT.jar
+- docker build -t task-tracker:1.0.0 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.0
 
 
-2. Improve TaskHandler GET /tasks Response
-------------------------------------------
+1. Release v1.0.0
+-----------------
 
 Urgency:
-Next.
+Immediate if not already committed/tagged.
 
-File:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
+Goal:
+Save the current working version as v1.0.0.
 
-Package:
-com.mab.tasktracker.server
+Files:
+- pom.xml
+- Dockerfile
+- TODO.txt
+- src/main/java
+- src/test/java
 
-Imports:
-- com.mab.tasktracker.service.TaskService
-- com.sun.net.httpserver.HttpHandler
-- com.sun.net.httpserver.HttpExchange
-- java.io.IOException
-- java.nio.charset.StandardCharsets
+Validation before tagging:
+- mvn test
+- mvn clean package
+- java -jar target/task-list-app-1.0-SNAPSHOT.jar
+- docker build -t task-tracker:1.0.0 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.0
+- Postman:
+  - GET http://localhost:8080/tasks
+  - POST http://localhost:8080/tasks should currently return 405
+  - GET http://localhost:8080/wrong should return 404
 
-Behavior:
-- Handle GET /tasks.
-- Return HTTP 200.
-- Return a readable response body.
-- Return HTTP 405 for unsupported methods.
-- Return HTTP 500 for unexpected errors.
-
-Current limitation:
-- taskService.listAllTasks().toString() is temporary.
-- It may print Java object references unless Task has a useful toString.
-
-Implementation notes:
-- Convert response text to bytes using UTF-8.
-- Send Content-Length based on the UTF-8 byte array length.
-- Close the response body after writing.
-
-Validation:
-- Run mvn test.
-- Start server.
-- Run:
-  curl -i http://localhost:8080/tasks
-- Expected:
-  HTTP 200 response.
+Git commands:
+- git status
+- git add .
+- git commit -m "Release v1.0.0 with Dockerized GET task API"
+- git tag v1.0.0
+- git push origin main
+- git push origin v1.0.0
 
 
-3. Add Task Text Formatting
+2. v1.0.1 - Add POST /tasks
 ---------------------------
 
 Urgency:
-After basic GET works.
-
-Option A file:
-src/main/java/com/mab/tasktracker/domain/Task.java
-
-Behavior:
-- Add a simple toString for temporary human-readable output.
-- Include id, title, and completed status.
-
-Option B file:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
-
-Behavior:
-- Format tasks inside TaskHandler instead of adding toString.
-
-Recommended for now:
-- Add temporary formatting in TaskHandler.
-- Save JSON for later.
-
-Imports:
-- java.util.List if formatting a list locally.
-- com.mab.tasktracker.domain.Task if directly iterating tasks.
-
-Validation:
-- Create a task manually in TaskTrackerEntryPoint if needed.
-- curl /tasks should show readable task data.
-
-
-4. Add POST /tasks
-------------------
-
-Urgency:
-After GET response is readable.
+Next feature.
 
 File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+Package:
+com.mab.tasktracker.server
 
 Imports:
 - java.io.InputStream
@@ -149,26 +81,42 @@ Imports:
 
 Behavior:
 - Handle POST /tasks.
-- Read request body as a title string.
+- Read request body as a plain text task title.
 - Call taskService.createTask(title).
-- Return created task.
+- Return created task using existing plain-text formatting.
 - Return HTTP 201 on success.
 - Return HTTP 400 if title is invalid.
+- Keep GET /tasks behavior unchanged.
+- Keep wrong path as 404.
+- Keep unsupported method as 405.
 
 Implementation notes:
-- Keep request parsing simple at first.
-- Body can be plain text before JSON exists.
+- Keep body parsing plain text for now.
+- Do not add JSON yet.
+- Do not add /tasks/{id} yet.
 
-Manual test:
+Manual curl test:
 curl -i -X POST http://localhost:8080/tasks --data "Buy milk"
 
+Postman test:
+- Method: POST
+- URL: http://localhost:8080/tasks
+- Body: raw text
+- Text: Buy milk
+
 Expected:
-- HTTP 201.
-- Response includes created task title.
+- HTTP 201
+- Response includes title "Buy milk"
+
+Validation:
+- mvn test
+- mvn clean package
+- Docker rebuild with tag task-tracker:1.0.1
+- Postman test passes
 
 
-5. Add Path Parsing For /tasks/{id}
------------------------------------
+3. v1.0.2 - Add PUT /tasks/{id}
+-------------------------------
 
 Urgency:
 After POST works.
@@ -177,72 +125,73 @@ File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
 
 Imports:
-- java.net.URI if useful.
+- java.io.InputStream
 - java.util.Optional
 - com.mab.tasktracker.domain.Task
 
 Behavior:
-- Read exchange.getRequestURI().getPath().
-- Support /tasks for collection routes.
-- Support /tasks/{id} for single-task routes.
-- Return HTTP 404 when ID is missing from service.
+- Add manual parsing for /tasks/{id}.
+- Handle PUT /tasks/{id}.
+- Treat PUT as "replace/update this task's editable fields."
+- For now, read the request body as the replacement task title.
+- Call taskService.renameTask(id, newTitle).
+- If ID exists, return HTTP 200 and formatted updated task.
+- If ID does not exist, return HTTP 404.
+- If title is invalid, return HTTP 400.
+- Keep GET /tasks behavior unchanged.
 
 Important:
-- Java HttpServer does not understand /tasks/{id} patterns automatically.
-- You must parse the path manually.
+- com.sun.net.httpserver.HttpServer does not understand {id} path variables.
+- You must parse exchange.getRequestURI().getPath() manually.
 
-Manual tests:
-curl -i http://localhost:8080/tasks/some-id
+Manual curl test:
+curl -i -X PUT http://localhost:8080/tasks/{id} --data "Replacement title"
+
+Postman test:
+- Method: PUT
+- URL: http://localhost:8080/tasks/{id}
+- Body: raw text
+- Text: Replacement title
+
+Expected:
+- Existing ID: 200
+- Missing ID: 404
 
 
-6. Add GET /tasks/{id}
-----------------------
+4. v1.0.3 - Add PATCH /tasks/{id}
+---------------------------------
 
 Urgency:
-After path parsing.
+After PUT works.
 
 File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
 
-Behavior:
-- Find a task by ID.
-- Return HTTP 200 with task when found.
-- Return HTTP 404 when missing.
-
-Service method:
-- taskService.findById(id)
-
-
-7. Add PATCH Routes
--------------------
-
-Urgency:
-After GET by ID works.
-
-File:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
-
-Routes:
-- PATCH /tasks/{id}/title
-- PATCH /tasks/{id}/complete
-- PATCH /tasks/{id}/reopen
+Imports:
+- java.io.InputStream
+- java.util.Optional
+- com.mab.tasktracker.domain.Task
 
 Behavior:
-- Rename route reads new title from request body.
+- Handle PATCH /tasks/{id}/title.
+- Read new title from plain text request body.
+- Call taskService.renameTask(id, newTitle).
+- Return HTTP 200 and formatted task if renamed.
+- Return HTTP 404 if task is missing.
+- Return HTTP 400 if title is invalid.
+- Handle PATCH /tasks/{id}/complete.
+- Handle PATCH /tasks/{id}/reopen.
 - Complete route calls taskService.completeTask(id).
 - Reopen route calls taskService.reopenTask(id).
-- Return HTTP 200 when updated.
-- Return HTTP 404 when task is missing.
-- Return HTTP 400 for invalid rename title.
 
-Manual tests:
-curl -i -X PATCH http://localhost:8080/tasks/{id}/complete
-curl -i -X PATCH http://localhost:8080/tasks/{id}/reopen
-curl -i -X PATCH http://localhost:8080/tasks/{id}/title --data "New title"
+Manual curl tests:
+- curl -i -X PATCH http://localhost:8080/tasks/{id}/title --data "New title"
+- curl -i -X PATCH http://localhost:8080/tasks/{id}/complete
+- curl -i -X PATCH http://localhost:8080/tasks/{id}/reopen
 
 
-8. Add DELETE /tasks/{id}
--------------------------
+5. v1.0.4 - Add DELETE /tasks/{id}
+----------------------------------
 
 Urgency:
 After PATCH routes.
@@ -251,43 +200,91 @@ File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
 
 Behavior:
-- Delete task by ID.
+- Handle DELETE /tasks/{id}.
+- Call taskService.deleteTask(id).
 - Return HTTP 204 or 200 when deleted.
 - Return HTTP 404 when missing.
 
-Service method:
-- taskService.deleteTask(id)
-
-Manual test:
+Manual curl test:
 curl -i -X DELETE http://localhost:8080/tasks/{id}
 
 
-9. Extract HTTP Response Helpers
---------------------------------
+6. v1.0.5 - Add HEAD
+--------------------
 
 Urgency:
-After routes start repeating response logic.
+After DELETE works.
 
 File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
 
-Behavior:
-- Avoid repeating response header/body writing.
-- Have one helper for sending text responses.
-- Always use UTF-8.
+HEAD behavior:
+- Like GET, but no response body.
+- Useful for checking whether a route/resource exists.
+- HEAD /tasks should return 200 when the route exists.
+- HEAD /tasks/{id} should return 200 when found and 404 when missing.
+- Do not write a response body for HEAD.
 
-Imports:
-- java.nio.charset.StandardCharsets
-
-Validation:
-- Existing routes still return same status codes and bodies.
+Manual curl test:
+- curl -I http://localhost:8080/tasks
 
 
-10. Add JSON Handling
----------------------
+7. v1.0.6 - Add OPTIONS
+-----------------------
 
 Urgency:
-After plain-text HTTP routes work.
+After HEAD works.
+
+File:
+src/main/java/com/mab/tasktracker/server/TaskHandler.java
+
+OPTIONS behavior:
+- Return allowed methods for /tasks and /tasks/{id}.
+- Useful for API discovery and later CORS support.
+
+Possible response header:
+- Allow: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+
+Manual curl tests:
+- curl -i -X OPTIONS http://localhost:8080/tasks
+
+
+8. v1.1.0 - Add JDBC Persistence
+--------------------------------
+
+Urgency:
+After HTTP API v1.0.x is complete.
+
+Goal:
+Move from in-memory storage to database-backed persistence.
+
+Possible files:
+- src/main/java/com/mab/tasktracker/repository/JdbcTaskRepository.java
+- src/main/java/com/mab/tasktracker/repository/TaskRepository.java may become an interface later
+
+Tools:
+- JDBC
+- H2, SQLite, or PostgreSQL
+
+Behavior:
+- Create tasks in database.
+- Find by ID from database.
+- List all from database.
+- Update title/completed status in database.
+- Delete from database.
+
+Tests:
+- Save task writes to DB.
+- Find by ID reads from DB.
+- Find all returns DB rows.
+- Delete removes DB row.
+
+
+9. Later - Add JSON Handling
+----------------------------
+
+Urgency:
+After plain-text API works.
 
 Possible file:
 src/main/java/com/mab/tasktracker/server/TaskJson.java
@@ -301,11 +298,7 @@ Initial approach:
 Behavior:
 - Convert one Task to JSON.
 - Convert List<Task> to JSON array.
-- Parse title from simple JSON body if desired.
-
-Imports:
-- com.mab.tasktracker.domain.Task
-- java.util.List
+- Parse title from JSON body.
 
 Task JSON fields:
 - id
@@ -316,13 +309,9 @@ Tests:
 Possible file:
 src/test/java/com/mab/tasktracker/server/TaskJsonTest.java
 
-Test cases:
-- taskToJsonIncludesIdTitleAndCompleted
-- taskListToJsonIncludesAllTasks
 
-
-11. Add HTTP Handler Tests
---------------------------
+10. Later - Add HTTP Handler Tests
+----------------------------------
 
 Urgency:
 After HTTP behavior stabilizes.
@@ -334,37 +323,14 @@ Behavior:
 - Verify GET /tasks.
 - Verify POST /tasks.
 - Verify missing route responses.
+- Verify method-not-allowed responses.
 
 Note:
-- Testing com.sun.net.httpserver handlers can be more involved.
-- Manual curl testing is acceptable before automated HTTP tests.
+- Manual Postman/curl testing is acceptable before automated handler tests.
 
 
-12. Make The Jar Runnable
--------------------------
-
-Urgency:
-After basic HTTP API works.
-
-File:
-pom.xml
-
-Behavior:
-- Configure a Main-Class for TaskTrackerEntryPoint.
-- Allow:
-  java -jar target/task-list-app-1.0-SNAPSHOT.jar
-
-Tools:
-- Maven jar plugin or shade plugin.
-
-Validation:
-- mvn clean package
-- java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- curl http://localhost:8080/tasks
-
-
-13. Add Frontend Files
-----------------------
+11. Later - Add Frontend Files
+------------------------------
 
 Urgency:
 After JSON API works.
@@ -383,12 +349,9 @@ Behavior:
 - Show empty state.
 - Show simple errors.
 
-Imports:
-- Not applicable for HTML/CSS/JS.
 
-
-14. Serve Static Frontend From Java
------------------------------------
+12. Later - Serve Static Frontend From Java
+-------------------------------------------
 
 Urgency:
 After frontend files exist.
@@ -403,64 +366,12 @@ Behavior:
 - GET /app.js returns JavaScript.
 - Unknown static paths return 404.
 
-Imports:
-- java.nio.file.Files
-- java.nio.file.Path
-- java.io.IOException
 
-
-15. Add Persistence
--------------------
+13. Later - Update README
+-------------------------
 
 Urgency:
-After full in-memory app works.
-
-Current state:
-- Repository stores tasks in memory.
-- Data disappears when app stops.
-
-Possible next design:
-- File-backed repository.
-
-Possible files:
-- src/main/java/com/mab/tasktracker/repository/FileBackedTaskRepository.java
-- TaskRepository may later become an interface.
-
-Behavior:
-- Load tasks from file at startup.
-- Save after create/rename/complete/reopen/delete.
-
-Tests:
-- saving task writes to file.
-- repository loads existing file.
-- delete removes task from file.
-
-
-16. Dockerize
--------------
-
-Urgency:
-After runnable jar works.
-
-File:
-Dockerfile
-
-Behavior:
-- Build project.
-- Run app jar.
-- Expose server port.
-
-Validation:
-- docker build succeeds.
-- docker run starts app.
-- curl /tasks works.
-
-
-17. Update README
------------------
-
-Urgency:
-Continuously, but especially after HTTP API works.
+Continuously, especially after each version tag.
 
 File:
 README.md
@@ -468,12 +379,7 @@ README.md
 Behavior:
 - Explain app purpose.
 - Explain how to run tests.
-- Explain how to run server.
-- Document curl examples.
+- Explain how to build jar.
+- Explain how to run Docker container.
+- Document Postman/curl examples.
 - Document current limitations.
-
-Commands:
-- mvn test
-- mvn clean package
-- java -cp target/classes com.mab.tasktracker.TaskTrackerEntryPoint
-- later: java -jar target/task-list-app-1.0-SNAPSHOT.jar
