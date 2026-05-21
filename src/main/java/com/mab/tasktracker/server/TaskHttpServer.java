@@ -12,7 +12,7 @@ public class TaskHttpServer {
     public TaskHttpServer(TaskService taskService, int port) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         this.taskHandler = new TaskHandler(taskService);
-        server.createContext("/tasks", taskHandler);
+        server.createContext("/", taskHandler);
     }
 
     public void start() {

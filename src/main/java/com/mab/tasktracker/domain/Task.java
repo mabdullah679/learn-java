@@ -29,8 +29,9 @@ public class Task {
     public boolean isCompleted() {
         return completed;
     }
-    public void rename(String title) {
+    public String rename(String title) {
         this.title = validateTitle(title);
+        return this.title;
     }
     public void markCompleted() {
         this.completed = true;

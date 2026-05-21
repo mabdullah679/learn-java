@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class TaskService {
-
     private final TaskRepository taskRepository = new TaskRepository();
-
     public Task createTask(String title) {
         final Task task = new Task(title);
         taskRepository.saveTask(task);
@@ -23,9 +21,11 @@ public class TaskService {
     public Optional<Task> findById(String id) {
         return taskRepository.findById(id);
     }
-
+    public Optional<Task> getTask(String id) {
+        return taskRepository.findById(id);
+    }
     public Optional<Task> renameTask(String id, String newTitle) {
-        final Optional<Task> taskOptional = taskRepository.findById(id);
+        final Optional<Task> taskOptional = getTask(id);
         if (taskOptional.isPresent()) {
             final Task task = taskOptional.get();
             task.rename(newTitle);
@@ -36,7 +36,7 @@ public class TaskService {
     }
 
     public Optional<Task> completeTask(String id) {
-        final Optional<Task> taskOptional = taskRepository.findById(id);
+        final Optional<Task> taskOptional = getTask(id);
         if (taskOptional.isPresent()) {
             final Task taskPresent = taskOptional.get();
             taskPresent.markCompleted();
@@ -45,9 +45,8 @@ public class TaskService {
             return Optional.empty();
         }
     }
-
     public Optional<Task> reopenTask(String id) {
-        final Optional<Task> taskOptional = taskRepository.findById(id);
+        final Optional<Task> taskOptional = getTask(id);
         if (taskOptional.isPresent()) { 
             final Task taskPresent = taskOptional.get();
             taskPresent.markIncomplete();
@@ -58,7 +57,7 @@ public class TaskService {
     }
 
     public boolean deleteTask(String id) {
-        Optional<Task> taskOptional = taskRepository.findById(id);
+        Optional<Task> taskOptional = getTask(id);
         if (taskOptional.isPresent()) {
             taskRepository.deleteById(id);
             return true;
@@ -67,3 +66,4 @@ public class TaskService {
         }
     }
 }
+
