@@ -2,7 +2,7 @@ Task Tracker App TODO
 =====================
 
 Current completed milestone:
-v1.0.0
+v1.0.2
 
 Completed:
 - Domain model implemented and tested.
@@ -17,23 +17,30 @@ Completed:
 - Dockerfile runs the jar in a container.
 - Docker deployment was tested.
 - Postman testing was completed for the current API.
+- POST /tasks creates tasks from plain-text request bodies.
+- POST /tasks returns 201 with the created task.
+- POST /tasks returns 400 for invalid titles.
+- PUT /tasks/{id} updates an existing task title.
+- PUT /tasks/{id} returns 200 with the updated task.
+- PUT /tasks/{id} returns 404 for missing task IDs.
+- PUT /tasks/{id} returns 400 for invalid replacement titles.
 
 Current verification commands:
 - mvn test
 - mvn clean package
 - java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- docker build -t task-tracker:1.0.0 .
-- docker run --rm -p 8080:8080 task-tracker:1.0.0
+- docker build -t task-tracker:1.0.2 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.2
 
 
-1. Release v1.0.0
+1. Release v1.0.2
 -----------------
 
 Urgency:
 Immediate if not already committed/tagged.
 
 Goal:
-Save the current working version as v1.0.0.
+Save the current working version as v1.0.2.
 
 Files:
 - pom.xml
@@ -46,123 +53,29 @@ Validation before tagging:
 - mvn test
 - mvn clean package
 - java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- docker build -t task-tracker:1.0.0 .
-- docker run --rm -p 8080:8080 task-tracker:1.0.0
+- docker build -t task-tracker:1.0.2 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.2
 - Postman:
   - GET http://localhost:8080/tasks
-  - POST http://localhost:8080/tasks should currently return 405
+  - POST http://localhost:8080/tasks should return 201 for a valid title
+  - PUT http://localhost:8080/tasks/{id} should return 200 for an existing task
+  - PUT http://localhost:8080/tasks/{id} should return 404 for a missing task
   - GET http://localhost:8080/wrong should return 404
 
 Git commands:
 - git status
 - git add .
-- git commit -m "Release v1.0.0 with Dockerized GET task API"
-- git tag v1.0.0
+- git commit -m "Release v1.0.2 with POST and PUT task API"
+- git tag v1.0.2
 - git push origin main
-- git push origin v1.0.0
+- git push origin v1.0.2
 
 
-2. v1.0.1 - Add POST /tasks
----------------------------
-
-Urgency:
-Next feature.
-
-File:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
-
-Package:
-com.mab.tasktracker.server
-
-Imports:
-- java.io.InputStream
-- java.nio.charset.StandardCharsets
-- com.mab.tasktracker.domain.Task
-
-Behavior:
-- Handle POST /tasks.
-- Read request body as a plain text task title.
-- Call taskService.createTask(title).
-- Return created task using existing plain-text formatting.
-- Return HTTP 201 on success.
-- Return HTTP 400 if title is invalid.
-- Keep GET /tasks behavior unchanged.
-- Keep wrong path as 404.
-- Keep unsupported method as 405.
-
-Implementation notes:
-- Keep body parsing plain text for now.
-- Do not add JSON yet.
-- Do not add /tasks/{id} yet.
-
-Manual curl test:
-curl -i -X POST http://localhost:8080/tasks --data "Buy milk"
-
-Postman test:
-- Method: POST
-- URL: http://localhost:8080/tasks
-- Body: raw text
-- Text: Buy milk
-
-Expected:
-- HTTP 201
-- Response includes title "Buy milk"
-
-Validation:
-- mvn test
-- mvn clean package
-- Docker rebuild with tag task-tracker:1.0.1
-- Postman test passes
-
-
-3. v1.0.2 - Add PUT /tasks/{id}
--------------------------------
-
-Urgency:
-After POST works.
-
-File:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
-
-Imports:
-- java.io.InputStream
-- java.util.Optional
-- com.mab.tasktracker.domain.Task
-
-Behavior:
-- Add manual parsing for /tasks/{id}.
-- Handle PUT /tasks/{id}.
-- Treat PUT as "replace/update this task's editable fields."
-- For now, read the request body as the replacement task title.
-- Call taskService.renameTask(id, newTitle).
-- If ID exists, return HTTP 200 and formatted updated task.
-- If ID does not exist, return HTTP 404.
-- If title is invalid, return HTTP 400.
-- Keep GET /tasks behavior unchanged.
-
-Important:
-- com.sun.net.httpserver.HttpServer does not understand {id} path variables.
-- You must parse exchange.getRequestURI().getPath() manually.
-
-Manual curl test:
-curl -i -X PUT http://localhost:8080/tasks/{id} --data "Replacement title"
-
-Postman test:
-- Method: PUT
-- URL: http://localhost:8080/tasks/{id}
-- Body: raw text
-- Text: Replacement title
-
-Expected:
-- Existing ID: 200
-- Missing ID: 404
-
-
-4. v1.0.3 - Add PATCH /tasks/{id}
+2. v1.0.3 - Add PATCH /tasks/{id}
 ---------------------------------
 
 Urgency:
-After PUT works.
+Next feature.
 
 File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
@@ -190,7 +103,7 @@ Manual curl tests:
 - curl -i -X PATCH http://localhost:8080/tasks/{id}/reopen
 
 
-5. v1.0.4 - Add DELETE /tasks/{id}
+3. v1.0.4 - Add DELETE /tasks/{id}
 ----------------------------------
 
 Urgency:
@@ -209,7 +122,7 @@ Manual curl test:
 curl -i -X DELETE http://localhost:8080/tasks/{id}
 
 
-6. v1.0.5 - Add HEAD
+4. v1.0.5 - Add HEAD
 --------------------
 
 Urgency:
@@ -229,7 +142,7 @@ Manual curl test:
 - curl -I http://localhost:8080/tasks
 
 
-7. v1.0.6 - Add OPTIONS
+5. v1.0.6 - Add OPTIONS
 -----------------------
 
 Urgency:
@@ -249,7 +162,7 @@ Manual curl tests:
 - curl -i -X OPTIONS http://localhost:8080/tasks
 
 
-8. v1.1.0 - Add JDBC Persistence
+6. v1.1.0 - Add JDBC Persistence
 --------------------------------
 
 Urgency:
@@ -280,7 +193,7 @@ Tests:
 - Delete removes DB row.
 
 
-9. Later - Add JSON Handling
+7. Later - Add JSON Handling
 ----------------------------
 
 Urgency:
@@ -310,7 +223,7 @@ Possible file:
 src/test/java/com/mab/tasktracker/server/TaskJsonTest.java
 
 
-10. Later - Add HTTP Handler Tests
+8. Later - Add HTTP Handler Tests
 ----------------------------------
 
 Urgency:
@@ -329,16 +242,15 @@ Note:
 - Manual Postman/curl testing is acceptable before automated handler tests.
 
 
-11. Later - Add Frontend Files
-------------------------------
+9. Later - Add TypeScript Frontend
+----------------------------------
 
 Urgency:
-After JSON API works.
+After HTTP API, JSON responses, and JDBC persistence are stable.
 
 Files:
-- src/main/resources/static/index.html
-- src/main/resources/static/styles.css
-- src/main/resources/static/app.js
+- frontend package, likely Vite + TypeScript
+- frontend/src
 
 Behavior:
 - Show tasks.
@@ -348,26 +260,21 @@ Behavior:
 - Delete tasks.
 - Show empty state.
 - Show simple errors.
+- Call the Java API through a small TypeScript API client.
 
 
-12. Later - Serve Static Frontend From Java
+10. Later - Serve Frontend Or Compose Services
 -------------------------------------------
 
 Urgency:
-After frontend files exist.
-
-Files:
-- src/main/java/com/mab/tasktracker/server/TaskHttpServer.java
-- possibly a new StaticFileHandler
+After TypeScript frontend exists.
 
 Behavior:
-- GET / returns index.html.
-- GET /styles.css returns CSS.
-- GET /app.js returns JavaScript.
-- Unknown static paths return 404.
+- Decide whether Java serves built static frontend files or Docker Compose runs backend and frontend separately.
+- Keep local development simple.
 
 
-13. Later - Update README
+11. Later - Update README
 -------------------------
 
 Urgency:

@@ -7,9 +7,11 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+
 public class TaskHandler implements HttpHandler {
     private final TaskService taskService;
     public TaskHandler(TaskService taskService) {
@@ -35,7 +37,10 @@ public class TaskHandler implements HttpHandler {
         List<String> validEndpoints = new ArrayList<>();
         validEndpoints.add("GET /tasks - List all tasks");
         validEndpoints.add("POST /tasks - Create a new task with the title in the request body");
-        validEndpoints.add("PUT /tasks - Update task title");
+        validEndpoints.add("PUT /tasks/{id} - Update task title");
+        validEndpoints.add("PATCH /tasks/{id}/complete - Mark a task as completed");
+        validEndpoints.add("PATCH /tasks/{id}/reopen - Mark a task as incomplete");
+        validEndpoints.add("PATCH /tasks/{id}/title - Update task title");
         return validEndpoints;
     }
 
@@ -52,16 +57,32 @@ public class TaskHandler implements HttpHandler {
     }
     private String extractTaskId(String path) {
         String[] parts = path.split("/");
-        if (parts.length != 3) {
-            return null;
+        int[] validLengths = {3, 4}; // Valid path lengths for endpoints with task ID
+        if (!Arrays.stream(validLengths).anyMatch(length -> length == parts.length)) {
+            return null; // Invalid path length
+        } else if (!parts[1].equals("tasks")) {
+            return null; // Path does not contain "tasks"
+        } else if (parts[2].isBlank() || parts[2] == null) {
+            return null; // Task ID is blank or null
         }
-        if (parts[1].equals("tasks") && parts[2] != null && !parts[2].isBlank()) {
-            return parts[2];
+        if (Arrays.stream(validLengths).anyMatch(length -> length == parts.length)) {
+            return parts[2]; // Return the task ID
+        } else {
+            return null; // No valid task ID found
+        }
+    }
+        private String extractTaskAction(String path) {
+        String[] parts = path.split("/");
+        int[] validLengths = {3, 4}; // Valid path lengths for endpoints with task ID
+        if (!Arrays.stream(validLengths).anyMatch(length -> length == parts.length)) {
+            return null; // Invalid path length
+        }
+        if (parts.length == validLengths[1] && parts[1].equals("tasks") && !parts[2].isBlank() && parts[3] != null && !parts[3].isBlank()) {
+            return parts[3]; // Return the task action (complete, reopen, title)
         } else {
             return null;
         }
     }
-
     private String getRequestBody(HttpExchange exchange) throws IOException{
         String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8).trim();
         return requestBody;
@@ -120,9 +141,50 @@ public class TaskHandler implements HttpHandler {
                         return;
                     } 
                 }
+                case "PATCH": {
+                    String action = extractTaskAction(path);
+                    if (action == null) {
+                        sendResponse(exchange, 400, "ERROR CODE 400: Invalid Endpoint");
+                        return;
+                    } else if (action.toLowerCase().equals(("complete"))) {
+                        Optional<Task> taskOptional = taskService.completeTask(taskId);
+                        if (taskOptional.isPresent()) {
+                            sendResponse(exchange, 200, formatTask(taskOptional.get()));
+                            return;
+                        } else {
+                            sendResponse(exchange, 404, "ERROR CODE 404: Task Not Found");
+                            return;
+                        }
+                    } else if (action.toLowerCase().equals("reopen")) {
+                        Optional<Task> taskOptional = taskService.reopenTask(taskId);
+                        if (taskOptional.isPresent()) {
+                            sendResponse(exchange, 200, formatTask(taskOptional.get()));
+                            return;
+                        } else {
+                            sendResponse(exchange, 404, "ERROR CODE 404: Task Not Found");
+                            return;
+                        }
+                    } else if (action.toLowerCase().equals("title")) {
+                        try {
+                            String requestBody = getRequestBody(exchange);
+                            Optional<Task> taskOptional = taskService.renameTask(taskId, requestBody);
+                            if (taskOptional.isPresent()) {
+                                sendResponse(exchange, 200, formatTask(taskOptional.get()));
+                                return;
+                            } else {
+                                sendResponse(exchange, 404, "ERROR CODE 404: Task Not Found");
+                                return;
+                            }
+                        } catch (IllegalArgumentException e) {
+                            sendResponse(exchange, 400, e.getMessage());
+                            return;
+                        }
+                    }
+                }
                 default: {
                     sendResponse(exchange, 405, ("Forbidden Method"));
                 } return;
+                
             }
         }
         else {
