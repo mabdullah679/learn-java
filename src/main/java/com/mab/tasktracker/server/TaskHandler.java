@@ -41,6 +41,7 @@ public class TaskHandler implements HttpHandler {
         validEndpoints.add("PATCH /tasks/{id}/complete - Mark a task as completed");
         validEndpoints.add("PATCH /tasks/{id}/reopen - Mark a task as incomplete");
         validEndpoints.add("PATCH /tasks/{id}/title - Update task title");
+        validEndpoints.add("DELETE /tasks/{id} - Delete a task");
         return validEndpoints;
     }
 
@@ -179,6 +180,16 @@ public class TaskHandler implements HttpHandler {
                             sendResponse(exchange, 400, e.getMessage());
                             return;
                         }
+                    }
+                }
+                case "DELETE" : {
+                    boolean deleted = taskService.deleteTask(taskId);
+                    if (deleted) {
+                        sendResponse(exchange, 200, "Task deleted successfully.");
+                        return;
+                    } else {
+                        sendResponse(exchange, 404, "ERROR CODE 404: Task Not Found");
+                        return;
                     }
                 }
                 default: {

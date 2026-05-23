@@ -2,7 +2,7 @@ Task Tracker App TODO
 =====================
 
 Current completed milestone:
-v1.0.2
+v1.0.3
 
 Completed:
 - Domain model implemented and tested.
@@ -24,23 +24,28 @@ Completed:
 - PUT /tasks/{id} returns 200 with the updated task.
 - PUT /tasks/{id} returns 404 for missing task IDs.
 - PUT /tasks/{id} returns 400 for invalid replacement titles.
+- PATCH /tasks/{id}/title updates an existing task title.
+- PATCH /tasks/{id}/complete marks an existing task completed.
+- PATCH /tasks/{id}/reopen marks an existing task incomplete.
+- PATCH /tasks/{id} routes return 404 for missing task IDs.
+- PATCH /tasks/{id}/title returns 400 for invalid replacement titles.
 
 Current verification commands:
 - mvn test
 - mvn clean package
 - java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- docker build -t task-tracker:1.0.2 .
-- docker run --rm -p 8080:8080 task-tracker:1.0.2
+- docker build -t task-tracker:1.0.3 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.3
 
 
-1. Release v1.0.2
+1. Release v1.0.3
 -----------------
 
 Urgency:
 Immediate if not already committed/tagged.
 
 Goal:
-Save the current working version as v1.0.2.
+Save the current working version as v1.0.3.
 
 Files:
 - pom.xml
@@ -53,61 +58,32 @@ Validation before tagging:
 - mvn test
 - mvn clean package
 - java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- docker build -t task-tracker:1.0.2 .
-- docker run --rm -p 8080:8080 task-tracker:1.0.2
+- docker build -t task-tracker:1.0.3 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.3
 - Postman:
   - GET http://localhost:8080/tasks
   - POST http://localhost:8080/tasks should return 201 for a valid title
   - PUT http://localhost:8080/tasks/{id} should return 200 for an existing task
   - PUT http://localhost:8080/tasks/{id} should return 404 for a missing task
+  - PATCH http://localhost:8080/tasks/{id}/title should return 200 for an existing task
+  - PATCH http://localhost:8080/tasks/{id}/complete should return 200 for an existing task
+  - PATCH http://localhost:8080/tasks/{id}/reopen should return 200 for an existing task
   - GET http://localhost:8080/wrong should return 404
 
 Git commands:
 - git status
 - git add .
-- git commit -m "Release v1.0.2 with POST and PUT task API"
-- git tag v1.0.2
+- git commit -m "Release v1.0.3 with PATCH task API"
+- git tag v1.0.3
 - git push origin main
-- git push origin v1.0.2
+- git push origin v1.0.3
 
 
-2. v1.0.3 - Add PATCH /tasks/{id}
----------------------------------
-
-Urgency:
-Next feature.
-
-File:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
-
-Imports:
-- java.io.InputStream
-- java.util.Optional
-- com.mab.tasktracker.domain.Task
-
-Behavior:
-- Handle PATCH /tasks/{id}/title.
-- Read new title from plain text request body.
-- Call taskService.renameTask(id, newTitle).
-- Return HTTP 200 and formatted task if renamed.
-- Return HTTP 404 if task is missing.
-- Return HTTP 400 if title is invalid.
-- Handle PATCH /tasks/{id}/complete.
-- Handle PATCH /tasks/{id}/reopen.
-- Complete route calls taskService.completeTask(id).
-- Reopen route calls taskService.reopenTask(id).
-
-Manual curl tests:
-- curl -i -X PATCH http://localhost:8080/tasks/{id}/title --data "New title"
-- curl -i -X PATCH http://localhost:8080/tasks/{id}/complete
-- curl -i -X PATCH http://localhost:8080/tasks/{id}/reopen
-
-
-3. v1.0.4 - Add DELETE /tasks/{id}
+2. v1.0.4 - Add DELETE /tasks/{id}
 ----------------------------------
 
 Urgency:
-After PATCH routes.
+Next feature.
 
 File:
 src/main/java/com/mab/tasktracker/server/TaskHandler.java
@@ -122,7 +98,7 @@ Manual curl test:
 curl -i -X DELETE http://localhost:8080/tasks/{id}
 
 
-4. v1.0.5 - Add HEAD
+3. v1.0.5 - Add HEAD
 --------------------
 
 Urgency:
@@ -142,7 +118,7 @@ Manual curl test:
 - curl -I http://localhost:8080/tasks
 
 
-5. v1.0.6 - Add OPTIONS
+4. v1.0.6 - Add OPTIONS
 -----------------------
 
 Urgency:
@@ -162,7 +138,7 @@ Manual curl tests:
 - curl -i -X OPTIONS http://localhost:8080/tasks
 
 
-6. v1.1.0 - Add JDBC Persistence
+5. v1.1.0 - Add JDBC Persistence
 --------------------------------
 
 Urgency:
@@ -193,7 +169,7 @@ Tests:
 - Delete removes DB row.
 
 
-7. Later - Add JSON Handling
+6. Later - Add JSON Handling
 ----------------------------
 
 Urgency:
@@ -223,7 +199,7 @@ Possible file:
 src/test/java/com/mab/tasktracker/server/TaskJsonTest.java
 
 
-8. Later - Add HTTP Handler Tests
+7. Later - Add HTTP Handler Tests
 ----------------------------------
 
 Urgency:
@@ -242,7 +218,7 @@ Note:
 - Manual Postman/curl testing is acceptable before automated handler tests.
 
 
-9. Later - Add TypeScript Frontend
+8. Later - Add TypeScript Frontend
 ----------------------------------
 
 Urgency:
@@ -263,7 +239,7 @@ Behavior:
 - Call the Java API through a small TypeScript API client.
 
 
-10. Later - Serve Frontend Or Compose Services
+9. Later - Serve Frontend Or Compose Services
 -------------------------------------------
 
 Urgency:
@@ -274,7 +250,7 @@ Behavior:
 - Keep local development simple.
 
 
-11. Later - Update README
+10. Later - Update README
 -------------------------
 
 Urgency:

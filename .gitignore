@@ -1,7 +1,27 @@
+# Java / Maven build output
 target/
+build/
+out/
 *.class
-.env
-.DS_Store
+
+# Packaged artifacts
+*.jar
+*.war
+*.ear
+
+# Runtime / crash / log files
 *.log
+hs_err_pid*
+replay_pid*
+
+# Local environment files
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
 .idea/
 .vscode/
