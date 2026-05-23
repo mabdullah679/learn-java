@@ -42,6 +42,8 @@ public class TaskHandler implements HttpHandler {
         validEndpoints.add("PATCH /tasks/{id}/reopen - Mark a task as incomplete");
         validEndpoints.add("PATCH /tasks/{id}/title - Update task title");
         validEndpoints.add("DELETE /tasks/{id} - Delete a task");
+        validEndpoints.add("HEAD /tasks/{id} - Check if a task exists without returning a body");
+        validEndpoints.add("HEAD /tasks - Check if any tasks exist without returning a body");
         return validEndpoints;
     }
 
@@ -88,6 +90,10 @@ public class TaskHandler implements HttpHandler {
         String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8).trim();
         return requestBody;
     }
+    private void sendEmptyResponse(HttpExchange exchange, int statusCode) throws IOException {
+        exchange.sendResponseHeaders(statusCode, -1); // -1 indicates no response body
+        exchange.close();
+    }
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -117,6 +123,10 @@ public class TaskHandler implements HttpHandler {
                         sb.append(formatTask(task));
                     }
                     sendResponse(exchange, 200, sb.toString());
+                    return;
+                }
+                case "HEAD": {
+                    sendEmptyResponse(exchange, 200);
                     return;
                 }
                 default: {
@@ -189,6 +199,16 @@ public class TaskHandler implements HttpHandler {
                         return;
                     } else {
                         sendResponse(exchange, 404, "ERROR CODE 404: Task Not Found");
+                        return;
+                    }
+                }
+                case "HEAD": {
+                    Optional<Task> taskOptional = taskService.getTask(taskId);
+                    if (taskOptional.isPresent()) {
+                        sendEmptyResponse(exchange, 200);
+                        return;
+                    } else {
+                        sendEmptyResponse(exchange, 404);
                         return;
                     }
                 }
