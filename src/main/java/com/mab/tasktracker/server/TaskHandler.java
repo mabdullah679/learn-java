@@ -44,6 +44,8 @@ public class TaskHandler implements HttpHandler {
         validEndpoints.add("DELETE /tasks/{id} - Delete a task");
         validEndpoints.add("HEAD /tasks/{id} - Check if a task exists without returning a body");
         validEndpoints.add("HEAD /tasks - Check if any tasks exist without returning a body");
+        validEndpoints.add("OPTIONS /tasks/{id} - List valid endpoints and methods for a specific task");
+        validEndpoints.add("OPTIONS /tasks - List valid endpoints and methods");
         return validEndpoints;
     }
 
@@ -127,6 +129,15 @@ public class TaskHandler implements HttpHandler {
                 }
                 case "HEAD": {
                     sendEmptyResponse(exchange, 200);
+                    return;
+                }
+                case "OPTIONS": {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Valid endpoints and methods:\n");
+                    for (String endpoint : recognizedEndpoints()) {
+                        sb.append("– ").append(endpoint).append("\n");
+                    }
+                    sendResponse(exchange, 200, sb.toString());
                     return;
                 }
                 default: {
