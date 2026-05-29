@@ -2,7 +2,7 @@ Task Tracker App TODO
 =====================
 
 Current completed milestone:
-v1.0.5
+v1.0.6
 
 Completed:
 - Domain model implemented and tested.
@@ -35,23 +35,26 @@ Completed:
 - HEAD /tasks/{id} returns 200 with no response body for existing task IDs.
 - HEAD /tasks/{id} returns 404 with no response body for missing task IDs.
 - HEAD endpoints were manually tested successfully.
+- OPTIONS /tasks returns 200 and an Allow header for collection methods.
+- OPTIONS /tasks/{id} returns 200 and an Allow header for task-specific methods.
+- OPTIONS endpoints were manually tested successfully.
 
 Current verification commands:
 - mvn test
 - mvn clean package
 - java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- docker build -t task-tracker:1.0.5 .
-- docker run --rm -p 8080:8080 task-tracker:1.0.5
+- docker build -t task-tracker:1.0.6 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.6
 
 
-1. Release v1.0.5
+1. Release v1.0.6
 -----------------
 
 Urgency:
 Immediate if not already committed/tagged.
 
 Goal:
-Save the current working version as v1.0.5.
+Save the current working version as v1.0.6.
 
 Files:
 - pom.xml
@@ -64,8 +67,8 @@ Validation before tagging:
 - mvn test
 - mvn clean package
 - java -jar target/task-list-app-1.0-SNAPSHOT.jar
-- docker build -t task-tracker:1.0.5 .
-- docker run --rm -p 8080:8080 task-tracker:1.0.5
+- docker build -t task-tracker:1.0.6 .
+- docker run --rm -p 8080:8080 task-tracker:1.0.6
 - Postman:
   - GET http://localhost:8080/tasks
   - POST http://localhost:8080/tasks should return 201 for a valid title
@@ -78,38 +81,20 @@ Validation before tagging:
   - HEAD http://localhost:8080/tasks should return 200 with no body
   - HEAD http://localhost:8080/tasks/{id} should return 200 with no body for an existing task
   - HEAD http://localhost:8080/tasks/{id} should return 404 with no body for a missing task
+  - OPTIONS http://localhost:8080/tasks should return 200 with Allow: GET, POST, HEAD, OPTIONS
+  - OPTIONS http://localhost:8080/tasks/{id} should return 200 with Allow: PUT, PATCH, DELETE, HEAD, OPTIONS
   - GET http://localhost:8080/wrong should return 404
 
 Git commands:
 - git status
 - git add .
-- git commit -m "v1.05 - Implemented HEAD method behavior"
-- git tag v1.0.5
+- git commit -m "v1.0.6 - Implemented OPTIONS method behavior"
+- git tag v1.0.6
 - git push origin main
-- git push origin v1.0.5
+- git push origin v1.0.6
 
 
-2. v1.0.6 - Add OPTIONS
------------------------
-
-Urgency:
-After HEAD works.
-
-File:
-src/main/java/com/mab/tasktracker/server/TaskHandler.java
-
-OPTIONS behavior:
-- Return allowed methods for /tasks and /tasks/{id}.
-- Useful for API discovery and later CORS support.
-
-Possible response header:
-- Allow: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
-
-Manual curl tests:
-- curl -i -X OPTIONS http://localhost:8080/tasks
-
-
-3. v1.1.0 - Add JDBC Persistence
+2. v1.1.0 - Add JDBC Persistence
 --------------------------------
 
 Urgency:
@@ -140,7 +125,7 @@ Tests:
 - Delete removes DB row.
 
 
-4. Later - Add JSON Handling
+3. Later - Add JSON Handling
 ----------------------------
 
 Urgency:
@@ -170,7 +155,7 @@ Possible file:
 src/test/java/com/mab/tasktracker/server/TaskJsonTest.java
 
 
-5. Later - Add HTTP Handler Tests
+4. Later - Add HTTP Handler Tests
 ----------------------------------
 
 Urgency:
@@ -189,7 +174,7 @@ Note:
 - Manual Postman/curl testing is acceptable before automated handler tests.
 
 
-6. Later - Add TypeScript Frontend
+5. Later - Add TypeScript Frontend
 ----------------------------------
 
 Urgency:
@@ -210,7 +195,7 @@ Behavior:
 - Call the Java API through a small TypeScript API client.
 
 
-7. Later - Serve Frontend Or Compose Services
+6. Later - Serve Frontend Or Compose Services
 -------------------------------------------
 
 Urgency:
@@ -221,7 +206,7 @@ Behavior:
 - Keep local development simple.
 
 
-8. Later - Update README
+7. Later - Update README
 -------------------------
 
 Urgency:

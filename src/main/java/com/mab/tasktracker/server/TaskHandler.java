@@ -137,6 +137,7 @@ public class TaskHandler implements HttpHandler {
                     for (String endpoint : recognizedEndpoints()) {
                         sb.append("– ").append(endpoint).append("\n");
                     }
+                    exchange.getResponseHeaders().add("Allow", "GET, POST, HEAD, OPTIONS");
                     sendResponse(exchange, 200, sb.toString());
                     return;
                 }
@@ -223,6 +224,19 @@ public class TaskHandler implements HttpHandler {
                         return;
                     }
                 }
+                case "OPTIONS": {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Valid endpoints and methods for task with ID '").append(taskId).append("':\n");
+                    sb.append("– PUT /tasks/").append(taskId).append(" – Update task title\n");
+                    sb.append("– PATCH /tasks/").append(taskId).append("/complete – Mark task as completed\n");
+                    sb.append("– PATCH /tasks/").append(taskId).append("/reopen – Mark task as incomplete\n");
+                    sb.append("– PATCH /tasks/").append(taskId).append("/title – Update task title\n");
+                    sb.append("– DELETE /tasks/").append(taskId).append(" – Delete the task\n");
+                    sb.append("– HEAD /tasks/").append(taskId).append(" – Check if the task exists without returning a body\n");
+                    exchange.getResponseHeaders().add("Allow", "PUT, PATCH, DELETE, HEAD, OPTIONS");
+                    sendResponse(exchange, 200, sb.toString());
+                    return;
+                }  
                 default: {
                     sendResponse(exchange, 405, ("Forbidden Method"));
                 } return;
