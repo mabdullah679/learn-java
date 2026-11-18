@@ -202,6 +202,9 @@ public class TaskHandler implements HttpHandler {
                             sendResponse(exchange, 400, e.getMessage());
                             return;
                         }
+                    } else {
+                        sendResponse(exchange, 400, "ERROR CODE 400: Invalid Endpoint");
+                        return;
                     }
                 }
                 case "DELETE" : {
